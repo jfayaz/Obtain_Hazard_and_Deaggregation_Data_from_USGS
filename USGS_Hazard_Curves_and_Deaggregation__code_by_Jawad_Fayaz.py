@@ -10,6 +10,7 @@ You may run this code in python IDE: 'Spyder' or any other similar IDE
 
 Make sure you have the following python libraries installed:
     pandas 
+    numpy
     urllib.request 
     string 
     openpyxl 
@@ -34,7 +35,7 @@ Following are the options that can be provided under each title:
     Region                      :   'COUS', 'WUS', 'CEUS'  ; {WUS: Western US, CEUS: Central Eastern US}
     Longitude                   :    Longitude of the Site
     Latitude                    :    Latitude of the Site
-    imt (Intensity Measure Type):    'PGA', 'SA0P2', 'SA1P0' ; {PGA: Peak Ground Acceleration, SA0P2: Spectra Acceleration at 0.2 secs, SA1P0: Spectral Acceleration at 1 sec}
+    imt (Intensity Measure Type):    'PGA', 'SA0P2', 'SA1P0','SA2P0' ; {PGA: Peak Ground Acceleration, SA0P2: Spectral Acceleration at 0.2 secs, SA1P0: Spectral Acceleration at 1 sec, SA2P0: Spectral Acceleration at 2 sec}
     vs30 (Shear-Wave Velocity)  :    '180', '259', '360', '537', '760', '1150', '2000' ; {in m/s , restricted to only these values}
 
 
@@ -61,12 +62,14 @@ You are welcome to make the additions to the code to make it more exhaustive
 """
 
 import pandas as pd
+import numpy as np
 from urllib.request import urlopen
 from string import ascii_uppercase
 from openpyxl import load_workbook
 import xlsxwriter
 import requests
 import json
+import openpyxl
 
 
 # Reading given data
@@ -79,7 +82,7 @@ imt_list = ['PGA', 'SA0P2', 'SA1P0','SA2P0']
 for ii in range(0,len(df)):
     
     ### ---------- HAZARD CURVES ---------- ###
-    
+        
     def url_resp_values(row):
         # Contatenating the input params with the link
         url = "https://earthquake.usgs.gov/nshmp-haz-ws/hazard/" + row
@@ -88,7 +91,7 @@ for ii in range(0,len(df)):
         response1 = {'xvalues': data['response'][0]['metadata']['xvalues']}
         response2 = {'yvalues': data['response'][0]['data'][0]['yvalues']}
         return response1, response2
-
+    
     lm=df[ii:ii+1].reset_index(drop=True)
     
     for j in range(0,len(imt_list)):
@@ -102,13 +105,21 @@ for ii in range(0,len(df)):
         DF_HAZARD_CURVES = pd.concat([DF_HAZARD_CURVES, pd.DataFrame.from_dict(response2)], axis=1)  
         
     DF_HAZARD_CURVES.columns = ['Acceleration (g)','lambda PGA', 'lambda Sa at 0.2 sec', 'lambda Sa at 1 sec','lambda Sa at 2 sec']
-    writer = pd.ExcelWriter('Output Data'+str(ii+1)+'.xlsx')
+    writer = pd.ExcelWriter('Output Data'+str(ii+1)+'.xlsx',engine='xlsxwriter')
     DF_HAZARD_CURVES.to_excel(writer,'Hazard Curves',startrow=4)
-   
- 
+    worksheet = writer.sheets['Hazard Curves']
+    worksheet.write('A1', 'Latitude')
+    worksheet.write('B1', lm['Latitude'][0])
+    worksheet.write('A2', 'Longitude')
+    worksheet.write('B2', lm['Longitude'][0])
+    worksheet.write('A3', 'Vs30 (m/s)')
+    worksheet.write('B3', lm['vs30'][0])
+    
+    
     
     ### ---------- DEAGGREGATION ---------- ###
     
+    lm=df[ii:ii+1].reset_index(drop=True)
     params=lm.apply(lambda x: sfmt(**x), 1)
     for i,row in enumerate(params.values):
         # Converting to utf encoding 8
@@ -123,7 +134,7 @@ for ii in range(0,len(df)):
               
     # Extracting sources from response
     data = json.loads(response_1)
-   
+       
     # json data starts with response->data->soruces
     lx = pd.DataFrame.from_dict(data['response'][0]['data'][0]['sources'])
     
@@ -140,55 +151,73 @@ for ii in range(0,len(df)):
     # Renaming column to source
     lx=lx.rename(columns={'name':'source'})
     
-    # Seperating bfault_gr and bfault_ch
-    list = (lx.loc[lx['source'].str.contains("bFault")]).index
-     
-    # Seperating both dataframes
-    bFault_ch=lx[list[0]:list[1]]
-    bFault_gr=lx[list[1]:]
+    #Getting indexes of faults
+    Fault_Name_idx = np.asarray(np.where(lx['r'].isna()))
+    Fault_Types = lx['source'][Fault_Name_idx[0]]
+    Fault_Name_idx = np.append(Fault_Name_idx,[[len(lx)]],axis=1)
+    position1 = 0
+    position2 = 2
     
-    # Dropping nan values
-    bFault_ch = bFault_ch.dropna()
-    bFault_gr = bFault_gr.dropna()
-     
-    # Resetting indexes
-    bFault_gr = bFault_gr.reset_index(drop=True)
-    bFault_ch = bFault_ch.reset_index(drop=True)
-    
-    # Number of rows in each dataframe
-    len_ch=len(bFault_ch.index)
-    len_gr=len(bFault_gr.index)
-  
-    bFault_gr.to_excel(writer,sheet_name= 'Deaggregation',startrow=2)
-    bFault_ch.to_excel(writer,sheet_name= 'Deaggregation',startrow=(len_gr+6))
+    #bFault type
+    if(Fault_Types[Fault_Types.str.contains("bFault")].any()):
+        bFault_idx =  Fault_Types[Fault_Types.str.contains("bFault")==True].to_frame().reset_index()
+        # Finding how many types of bFaults are there
+        if len(bFault_idx) > 0: 
+            # Making a list containing dataframes for each type of bFault
+            bFault_idx_true = np.where(np.in1d(Fault_Name_idx, bFault_idx['index'].values))[0]
+            bFault_list = [[]]
+            bFault_list[0] = lx[Fault_Name_idx[0][bFault_idx_true[0]]:Fault_Name_idx[0][bFault_idx_true[0]+1]].reset_index(drop=True)
+            bFault_list[0][1:].to_excel(writer,sheet_name='Deaggregation',startrow=position1+1)
+            worksheet = writer.sheets['Deaggregation']
+            worksheet.write('A'+str(position1+1), bFault_list[0]['source'][0])
+            position1 = len(bFault_list[0])
+            # if more than 1 type of aFaults, appending them
+            for i in range(1,len(bFault_idx_true)):
+                bFault_list.append(lx[Fault_Name_idx[0][bFault_idx_true[i]]:Fault_Name_idx[0][bFault_idx_true[i]+1]].reset_index(drop=True))
+                position1 = position1 + 3
+                bFault_list[i][1:].to_excel(writer,sheet_name='Deaggregation',startrow=position1)
+                worksheet = writer.sheets['Deaggregation']
+                worksheet.write('A'+str(position1), bFault_list[i]['source'][0])
+                position2 = position1 + len(bFault_list[i]) + 3
+        del bFault_list
+        del bFault_idx_true
+                
+                
+    #aFault type
+    if(Fault_Types[Fault_Types.str.contains("aFault")].any()):
+        aFault_idx =  Fault_Types[Fault_Types.str.contains("aFault")==True].to_frame().reset_index()
+        #Finding how many types of aFaults are there
+        if len(aFault_idx) > 0: 
+            # Making a list containing dataframes for each type of aFault
+            aFault_idx_true = np.where(np.in1d(Fault_Name_idx, aFault_idx['index'].values))[0]
+            aFault_list = [[]]
+            aFault_list[0] = lx[Fault_Name_idx[0][aFault_idx_true[0]]:Fault_Name_idx[0][aFault_idx_true[0]+1]].reset_index(drop=True)
+            position2 = position2
+            aFault_list[0][1:].to_excel(writer,sheet_name='Deaggregation',startrow=position2-1) 
+            worksheet = writer.sheets['Deaggregation']
+            worksheet.write('A'+str(position2-1), aFault_list[0]['source'][0])
+            # if more than 1 type of aFaults, appending them
+            for i in range(1,len(aFault_idx_true)):
+                aFault_list.append(lx[Fault_Name_idx[0][aFault_idx_true[i]]:Fault_Name_idx[0][aFault_idx_true[i]+1]].reset_index(drop=True))
+                position2 = position2 + len(aFault_list[i-1]) + 2
+                aFault_list[i][1:].to_excel(writer,sheet_name='Deaggregation',startrow=position2-1)
+                worksheet = writer.sheets['Deaggregation']
+                worksheet.write('A'+str(position2-1), aFault_list[i]['source'][0])
+        del aFault_list
+        del aFault_idx_true
+        
     writer.save()
-	
-    import openpyxl
-    xfile = openpyxl.load_workbook('Output Data'+str(ii+1)+'.xlsx')
-    sheet = xfile.get_sheet_by_name('Deaggregation')
-    sheet['A2'] = 'bFault_gr'
-    sheet['A'+ str(len_gr + 6)] = 'bFault_ch'
-    xfile.save('Output Data'+str(ii+1)+'.xlsx')
     
-    sheet = xfile.get_sheet_by_name('Hazard Curves')
-    sheet['A1'] = 'Latitude'
-    sheet['B1'] =  lm['Latitude'][0]
-    sheet['A2'] = 'Longitude'
-    sheet['B2'] =  lm['Longitude'][0]
-    sheet['A3'] = 'Vs30'
-    sheet['B3'] =  lm['vs30'][0]
-    
-    xfile.save('Output Data'+str(ii+1)+'.xlsx')
-    
-    ### Clearing selected variables in Variable explorer
     del lm 
     del params
     del response1
     del response2
+    del response_1
+    del Fault_Name_idx
     del DF_HAZARD_CURVES
     del writer
     del data
     del lx
-    del list
-    del bFault_ch
-    del bFault_gr
+    del Fault_Types
+    
+
