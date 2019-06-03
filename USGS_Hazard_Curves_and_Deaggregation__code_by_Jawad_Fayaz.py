@@ -64,6 +64,24 @@ You are welcome to make the additions to the code to make it more exhaustive
 
 """
 
+
+##### ================== INPUTS  ================== #####
+
+Plot_Hazard_Curves = 'Yes'
+
+
+
+##### ============ END OF USER INPUTS  ============ #####
+#########################################################
+###%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#####
+
+
+
+
+
+
+
+## Importing Libraries
 import pandas as pd
 import numpy as np
 from urllib.request import urlopen
@@ -73,6 +91,10 @@ import xlsxwriter
 import requests
 import json
 import openpyxl
+import matplotlib.pyplot as plt
+import warnings
+import matplotlib.cbook
+warnings.filterwarnings("ignore",category=matplotlib.cbook.mplDeprecation)
 
 
 # Reading given data
@@ -133,7 +155,38 @@ for ii in range(0,len(df)):
     worksheet.write('A3', 'Vs30 (m/s)')
     worksheet.write('B3', lm['vs30'][0])
     
-
+    
+    # Plotting Hazard Curves
+    if Plot_Hazard_Curves == 'Yes':
+        def plot_hazard(PlotTitle,lambdaType):
+            axes = fig.add_subplot(1, 1, 1)
+            axes.plot(DF_HAZARD_CURVES['Acceleration (g)'], DF_HAZARD_CURVES[lambdaType] , '.-',lw=7,markersize=12) 
+            axes.set_xlabel('Acceleration (g)',fontsize=30,fontweight='bold')
+            axes.set_ylabel('Rate of Exceedance',fontsize=30,fontweight='bold')
+            axes.set_yscale('log')
+            axes.set_title(PlotTitle,fontsize=40,fontweight='bold')
+            axes.tick_params(labelsize= 25)
+            axes.grid(True)
+            axes.set_xlim(0, np.ceil(max(DF_HAZARD_CURVES['Acceleration (g)'])))
+            axes.set_ylim(1/10**10,1)
+            axes.axhline(linewidth=10,color='black')        
+            axes.axvline(linewidth=10,color='black')
+            axes.hold(True)
+            axes.legend(fontsize =30)
+        
+        fig = plt.figure(ii+1,figsize=(18,12))
+        plot_hazard('Hazard Curve for Site ' + str(ii+1),'lambda PGA')
+        
+        fig = plt.figure(ii+1,figsize=(18,12))
+        plot_hazard('Hazard Curve for Site ' + str(ii+1),'lambda Sa at 0.2 sec')
+        
+        fig = plt.figure(ii+1,figsize=(18,12))
+        plot_hazard('Hazard Curve for Site ' + str(ii+1),'lambda Sa at 1 sec')
+        
+        fig = plt.figure(ii+1,figsize=(18,12))
+        plot_hazard('Hazard Curve for Site ' + str(ii+1),'lambda Sa at 2 sec')
+       
+    
 
     
     print('Downloading Deaggregation Results for Site {}...\n\n'.format(np.round(ii+1,0)))    
