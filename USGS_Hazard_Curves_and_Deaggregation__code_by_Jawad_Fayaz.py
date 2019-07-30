@@ -102,10 +102,10 @@ data             = pd.read_excel('Input Data.xlsx', converters={'Edition':str,'R
 sfmt             = '{Edition}/{Region}/{Longitude}/{Latitude}/{imt}/{vs30}/{Return Period}'.format
 imt_list         = ['PGA', 'SA0P2', 'SA1P0','SA2P0']
 USGS_Sa_T        = pd.DataFrame(columns=['T','imt'])
-USGS_Sa_T['T']   = np.array([0,0.2,1,2])
+USGS_Sa_T['T']   = np.array([0,0.20000002,1.0000002,2])
 USGS_Sa_T['imt'] = imt_list
 USGS_RP          = np.array([475,975,2475])
-USGS_Vs30        = np.array([180,259,360,537,760,1150])
+USGS_Vs30        = np.array([180.0001,259.0001,360.0001,537.0001,760.0001,1150.0001])
 df               = pd.DataFrame(columns=['Edition','Region','Longitude','Latitude','imt','vs30','Return Period'])
 df['Edition']    = data['Edition'].apply(lambda x: 'E'+x)
 df['Longitude']  = data['Longitude']
@@ -116,13 +116,12 @@ diff_hazards     = data['Return Period'].apply(lambda x: abs(x-USGS_RP))
 df['Return Period'] = USGS_RP[diff_hazards.apply(lambda x: np.argmin(x))]
 df['vs30']       = USGS_Vs30[diff_vs30.apply(lambda x: np.argmin(x))]
 df['Region']     = data['Region']
-for i in diff_periods.apply(lambda x: np.argmin(x)): df['imt'] = USGS_Sa_T['imt'][i]
-
+for i in diff_periods.apply(lambda x: np.argmin(x)): df['imt'][i] = USGS_Sa_T['imt'][i] 
 
 
 for ii in range(0,len(df)):
     
-    print('\nDownloading Hazard Curves for Site {}...\n'.format(np.round(ii+1,0)))
+    print('\nDownloading Hazard Curves for Site Input {}...\n'.format(np.round(ii+1,0)))
     ### ---------- HAZARD CURVES ---------- ###
         
     def url_resp_values(row):
@@ -189,9 +188,8 @@ for ii in range(0,len(df)):
     
 
     
-    print('Downloading Deaggregation Results for Site {}...\n\n'.format(np.round(ii+1,0)))    
+    print('Downloading Deaggregation Results for Site Input {}...\n\n'.format(np.round(ii+1,0)))    
     ### ---------- DEAGGREGATION ---------- ###
-    
     lm=df[ii:ii+1].reset_index(drop=True)
     params=lm.apply(lambda x: sfmt(**x), 1)
     for i,row in enumerate(params.values):
@@ -224,7 +222,7 @@ for ii in range(0,len(df)):
     Fault_Name_idx = np.append(Fault_Name_idx,[[len(lx)]],axis=1)
     position1 = 0
     position2 = 2 
-    
+    Fault_Types = Fault_Types.dropna()
     #bFault type
     if(Fault_Types[Fault_Types.str.contains("bFault")].any()):
         bFault_idx =  Fault_Types[Fault_Types.str.contains("bFault")==True].to_frame().reset_index()
