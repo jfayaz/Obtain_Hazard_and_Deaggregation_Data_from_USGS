@@ -116,9 +116,9 @@ diff_hazards     = data['Return Period'].apply(lambda x: abs(x-USGS_RP))
 df['Return Period'] = USGS_RP[diff_hazards.apply(lambda x: np.argmin(x))]
 df['vs30']       = USGS_Vs30[diff_vs30.apply(lambda x: np.argmin(x))]
 df['Region']     = data['Region']
-for i in diff_periods.apply(lambda x: np.argmin(x)): df['imt'][i] = USGS_Sa_T['imt'][i] 
-
-
+for i in range(0,len(diff_periods)):
+    df['imt'][i] = USGS_Sa_T['imt'][np.argmin(diff_periods[i])]
+            
 for ii in range(0,len(df)):
     
     print('\nDownloading Hazard Curves for Site Input {}...\n'.format(np.round(ii+1,0)))
