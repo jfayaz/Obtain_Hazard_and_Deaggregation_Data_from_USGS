@@ -99,10 +99,6 @@ warnings.filterwarnings("ignore",category=matplotlib.cbook.mplDeprecation)
 
 # Reading given data
 data             = pd.read_excel('Input Data.xlsx', converters={'Edition':str,'Region':str,'imt':str})
-url_hazard_1 = "https://earthquake.usgs.gov/nshmp-haz-ws/hazard/"
-url_hazard_2 = "https://earthquake.usgs.gov/nshmp-haz-ws/hazard?"
-url_deagg_1 = "https://earthquake.usgs.gov/nshmp-haz-ws/deagg/"
-url_deagg_2 = "https://earthquake.usgs.gov/nshmp-haz-ws/deagg?"
 sfmt             = '{Edition}/{Region}/{Longitude}/{Latitude}/{imt}/{vs30}/{Return Period}'.format
 sfmt_2           = 'edition={Edition}&region={Region}&longitude={Longitude}&latitude={Latitude}&imt={imt}&vs30={vs30}&returnperiod={Return Period}'.format
 imt_list         = ['PGA', 'SA0P2', 'SA1P0','SA2P0']
@@ -154,6 +150,11 @@ def url_resp_values_haz(row_haz,url):
 for i in range(0,len(diff_periods)):
     df['imt'][i] = USGS_Sa_T['imt'][np.argmin(diff_periods[i])]
             
+url_hazard_1     = "https://earthquake.usgs.gov/nshmp-haz-ws/hazard/"
+url_hazard_2     = "https://earthquake.usgs.gov/nshmp-haz-ws/hazard?"
+url_deagg_1      = "https://earthquake.usgs.gov/nshmp-haz-ws/deagg/"
+url_deagg_2      = "https://earthquake.usgs.gov/nshmp-haz-ws/deagg?"
+
 for ii in range(0,len(df)):
     
     print('\nDownloading Hazard Curves for Site Input {}...\n'.format(np.round(ii+1,0)))
