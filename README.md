@@ -5,29 +5,25 @@ Site Location provided with other inputs.
 
 You may run this code in python IDE: 'Spyder' or any other similar IDE
 Make sure you have the following python libraries installed:
-    pandas 
-    numpy
-    urllib.request 
-    string 
-    openpyxl 
-    xlsxwriter
-    requests
-    json
+        pandas 
+        numpy
+        urllib.request 
+        string 
+        openpyxl 
+        xlsxwriter
+        requests
+        json
 
 
 INPUT:
-The input data must be provided in form of Excel file as per the given 'Input Data.xlsx' file. The name of the excel file must be kept as 'Input Data.xlsx'
+The input data must be provided in form of Excel file as per the given 'Input Data.xlsx' file. The name of the excel file must be kept as 'Input Data.xlsx'. Row 1 of the file must contain the titles as follows:
 
-
-Row 1 of the file must contain the titles as follows:
-
-   Edition	Region	Longitude	Latitude    Period	vs30	Return Period
+        Edition	Region	Longitude	Latitude    Period	vs30	Return Period
    
 
 The input data must be provided starting from row 2 of the sheet with the required values under each title. More than 1 rows can be provided as the data 
 
-
-E.g. the example file 'Input Data.xlsx' contains input for 2 sites 
+    E.g. the example file 'Input Data.xlsx' contains input for 2 sites 
 
 Following are the options that can be provided under each title:   
     
@@ -52,15 +48,12 @@ Following are the options that can be provided under each title:
 OUTPUT:
 The output will be provided in a saperate Excel file 'Output Data.xlsx' for each input. The file will contain 2 sheets:
 
-1) 'Hazard Curves' sheet will contain information about the Hazard Curves at 0.2 sec, 1 sec and 2 secs
-The output will have titles:
-      Acceleration (g)	lambda PGA	 lambda Sa at 0.2 sec	 lambda Sa at 1 sec	  lambda Sa at 2 sec
-         
+    1) 'Hazard Curves' sheet will contain information about the Hazard Curves at 0.2 sec, 1 sec and 2 secs. The output will have titles:
+                Acceleration (g)	lambda PGA	 lambda Sa at 0.2 sec	 lambda Sa at 1 sec	  lambda Sa at 2 sec
 
-2) 'Deaggregation' sheet will contain information about the deaggregation of the site at given imt level
-The output will have two saparate tables showing the deaggregation of faults from 'Gutenberg-Richter (gr)' and 'Characteristic (ch)' branches of the USGS logic tree. They both must be added weightedly to attain total deaggregation
-Each table will have titles:
-      source	r	m	ε	longitude	latitude	azimuth	  % contribution
-      
+
+    2) 'Deaggregation' sheet will contain information about the deaggregation of the site at given imt level. The output will have two saparate tables showing the deaggregation of faults from 'Gutenberg-Richter (gr)' and 'Characteristic (ch)' branches of the USGS logic tree. They both must be added weightedly to attain total deaggregation. Each table will have titles:
+                source	r	m	ε	longitude	latitude	azimuth	  % contribution
+
 
 Note: If a USGS branch other than 'afault' and 'bfault' is used in deaggregation, the results wont be provided for now! You are welcome to make the additions to the code to make it more exhaustive
