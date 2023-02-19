@@ -20,6 +20,7 @@ def url_haz_process(df,lm,imt_list,sfmt,sfmt_2,DF_Cols):
     ### ---------- HAZARD CURVES ---------- ###
     global Plot_Hazard_Curves
     k,urls = checking_hazard_urls(lm,sfmt,sfmt_2)
+    print(urls)
     if k == 0:
         Plot_Hazard_Curves = 'No'
         print('\nUSGS Server Busy! No Response from USGS. Please try again after sometime.')
@@ -46,11 +47,11 @@ def url_haz_process(df,lm,imt_list,sfmt,sfmt_2,DF_Cols):
 def checking_hazard_urls(lm,sfmt,sfmt_2):
     url_responses = {}
     data = pd.DataFrame()
-    url_head = ["https://earthquake.usgs.gov/nshmp-haz-ws/hazard/","https://prod01-earthquake.cr.usgs.gov/nshmp-haz-ws/hazard/"]
+    url_head = ["https://earthquake.usgs.gov/nshmp-haz-ws/hazard/"]
     url_tail_1 = list(lm.apply(lambda x: sfmt(**x), 1))
     url_tail_2 = list(lm.apply(lambda x: sfmt_2(**x), 1))
-    urls = {1:url_head[0]+url_tail_1[0],2:url_head[0]+url_tail_2[0],3:url_head[1]+url_tail_1[0],4:url_head[1]+url_tail_2[0]}
-    for i in range(1,5):
+    urls = {1:url_head[0]+url_tail_1[0],2:url_head[0]+url_tail_2[0]}
+    for i in range(1,3):
         data = pd.DataFrame()
         #print("\n\n Checking Hazard URL:", i)
         data = url_resp_values_haz(urls[i])
@@ -59,8 +60,6 @@ def checking_hazard_urls(lm,sfmt,sfmt_2):
     for k, v in url_responses.items():
         if "success" == v and k in (1,3):
             return k,url_head[0]
-        elif "success" == v and k in (2,4):
-            return k,url_head[1]
         else:
             return 0,url_head[0]
         

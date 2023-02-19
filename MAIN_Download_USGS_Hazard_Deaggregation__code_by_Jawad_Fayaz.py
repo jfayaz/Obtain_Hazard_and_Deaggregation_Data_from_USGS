@@ -86,9 +86,10 @@ warnings.filterwarnings("ignore",category=matplotlib.cbook.mplDeprecation)
 warnings.filterwarnings('error')
 import warnings
 warnings.simplefilter('once')#"error", "ignore", "always", "default", "module"
-import process_hazard as haz
-import process_deag as deag
-
+import process_hazard_cp as haz
+import process_deag_cp as deag
+import tracemalloc
+tracemalloc.start()
 # Reading given data
 data             = pd.read_excel('Input Data.xlsx', converters={'Edition':str,'Region':str,'imt':str},engine="openpyxl")
 data             = data.dropna()
